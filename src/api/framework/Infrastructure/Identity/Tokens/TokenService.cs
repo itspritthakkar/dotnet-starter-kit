@@ -33,7 +33,7 @@ public sealed class TokenService : ITokenService
         _publisher = publisher;
     }
 
-    public async Task<TokenResponse> GenerateTokenAsync(TokenGenerationCommand request, string ipAddress, CancellationToken cancellationToken)
+    public async Task<LoginResponse> GenerateTokenAsync(TokenGenerationCommand request, string ipAddress, CancellationToken cancellationToken)
     {
         var currentTenant = _multiTenantContextAccessor!.MultiTenantContext.TenantInfo;
         if (currentTenant == null) throw new UnauthorizedException();
@@ -62,7 +62,24 @@ public sealed class TokenService : ITokenService
             }
         }
 
-        return await GenerateTokensAndUpdateUser(user, ipAddress);
+        TokenResponse tokenResponse = await GenerateTokensAndUpdateUser(user, ipAddress);
+
+        LoginResponse response = new(
+            new Guid(user.Id),
+            user.UserName,
+            user.FirstName,
+            user.LastName,
+            user.Email,
+            user.IsActive,
+            user.EmailConfirmed,
+            user.PhoneNumber,
+            user.ImageUrl,
+            tokenResponse.Token,
+            tokenResponse.RefreshToken,
+            tokenResponse.RefreshTokenExpiryTime
+        );
+
+        return response;
     }
 
 
